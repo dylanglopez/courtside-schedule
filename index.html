@@ -157,7 +157,7 @@
     { teams:"W191 vs W102", iso:"2026-07-19T15:00:00-04:00", stage:"Final" }
   ];
 
-  var DEAL        = "🍺 $25 Dollar Pitchers all game long";
+  var DEAL        = "🍺 $25 Dollar Pitchers<br>all game long 🍺";
   var LIVE_MS     = 2.5 * 60 * 60 * 1000;
   var UPCOMING_N  = 4;
   var TZ          = "America/New_York";
@@ -195,7 +195,7 @@
             +   '<div class="cs-tag">'+(isLive?"LIVE NOW":"NEXT MATCH")+(hero.stage?' · '+esc(hero.stage):'')+'</div>'
             +   '<div class="cs-teams">'+esc(hero.teams)+(isLive?' <span class="cs-live">● LIVE</span>':'')+'</div>'
             +   '<div class="cs-when">'+label(hero.iso)+'</div>'
-            +   '<div class="cs-deal">'+esc(DEAL)+'</div>'
+            +   '<div class="cs-deal">'+DEAL+'</div>'
             + '</div>';
     } else {
       html += '<div class="cs-next"><div class="cs-tag">SCHEDULE</div>'

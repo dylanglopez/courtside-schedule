@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Courtside Schedule</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Monoton&display=swap');
+  * { margin:0; box-sizing:border-box; font-family:'Helvetica Neue',Arial,sans-serif; }
+  body { background:transparent; }
+  .cs-wrap { max-width:520px; margin:0 auto; padding:16px; }
+
+  .cs-next {
+    background:#37875f;
+    color:#fff; border-radius:0; padding:24px; text-align:center;
+  }
+  .cs-next .cs-tag { font-size:13px; letter-spacing:3px; opacity:.85; }
+  .cs-next .cs-teams { font-size:30px; font-weight:800; margin:8px 0; }
+  .cs-next .cs-when { font-size:16px; opacity:.95; }
+  .cs-next .cs-deal {
+    margin-top:14px; display:block; width:100%; background:#f7f5e1; color:#1b1b1b;
+    font-family:'Monoton',cursive; font-weight:400; padding:10px 16px; border-radius:0; font-size:16px;
+  }
+  .cs-live {
+    display:inline-block; margin-left:8px; background:#e53935; color:#fff;
+    font-size:11px; font-weight:800; letter-spacing:1px; padding:2px 8px;
+    border-radius:6px; vertical-align:middle;
+  }
+
+  .cs-up { margin-top:18px; }
+  .cs-up h3 { font-size:14px; letter-spacing:2px; color:#666; margin-bottom:10px; }
+  .cs-row {
+    display:flex; justify-content:space-between; align-items:center;
+    background:#fff; border:1px solid #eee; border-radius:12px;
+    padding:14px 16px; margin-bottom:8px;
+  }
+  .cs-row .cs-t { font-weight:700; color:#222; }
+  .cs-row .cs-d { font-size:13px; color:#777; }
+  .cs-empty { color:#777; text-align:center; padding:8px; }
+</style>
+</head>
+<body>
+<div class="cs-wrap" id="cs-app">Loading schedule…</div>
+
+<script>
+(function(){
+  // ===========================================================================
+  // FULL SCHEDULE — add every match here.
+  // iso: start time. The "-04:00" is Eastern Daylight (summer). Use "-05:00"
+  //      only for dates Nov–Mar. Display always shows Eastern time.
+  // Format: YYYY-MM-DDTHH:MM:SS-04:00   (24-hour clock)
+  // ===========================================================================
+  var MATCHES = [
+    { teams:"Mexico vs South Africa", iso:"2026-06-11T15:00:00-04:00", stage:"Group A" },
+    { teams:"South Korea vs UEFA D", iso:"2026-06-11T22:00:00-04:00", stage:"Group A" },
+    { teams:"Canada vs UEFA A", iso:"2026-06-12T15:00:00-04:00", stage:"Group B" },
+    { teams:"United States vs Paraguay", iso:"2026-06-12T21:00:00-04:00", stage:"Group D" },
+    { teams:"Qatar vs Switzerland", iso:"2026-06-13T15:00:00-04:00", stage:"Group B" },
+    { teams:"Brazil vs Morocco", iso:"2026-06-13T18:00:00-04:00", stage:"Group C" },
+    { teams:"Haiti vs Scotland", iso:"2026-06-13T21:00:00-04:00", stage:"Group C" },
+    { teams:"Australia vs UEFA C", iso:"2026-06-13T23:59:00-04:00", stage:"Group D" },
+    { teams:"Germany vs Curacao", iso:"2026-06-14T13:00:00-04:00", stage:"Group E" },
+    { teams:"Netherlands vs Japan", iso:"2026-06-14T16:00:00-04:00", stage:"Group F" },
+    { teams:"Ivory Coast vs Ecuador", iso:"2026-06-14T19:00:00-04:00", stage:"Group E" },
+    { teams:"UEFA B vs Tunisia", iso:"2026-06-14T22:00:00-04:00", stage:"Group F" },
+    { teams:"Spain vs Cape Verde", iso:"2026-06-15T12:00:00-04:00", stage:"Group H" },
+    { teams:"Belgium vs Egypt", iso:"2026-06-15T15:00:00-04:00", stage:"Group G" },
+    { teams:"Saudi Arabia vs Uruguay", iso:"2026-06-15T18:00:00-04:00", stage:"Group H" },
+    { teams:"Iran vs New Zealand", iso:"2026-06-15T21:00:00-04:00", stage:"Group G" },
+    { teams:"France vs Senegal", iso:"2026-06-16T15:00:00-04:00", stage:"Group I" },
+    { teams:"FIFA 2 vs Norway", iso:"2026-06-16T18:00:00-04:00", stage:"Group I" },
+    { teams:"Argentina vs Algeria", iso:"2026-06-16T21:00:00-04:00", stage:"Group J" },
+    { teams:"Austria vs Jordan", iso:"2026-06-16T23:59:00-04:00", stage:"Group J" },
+    { teams:"Portugal vs FIFA 1", iso:"2026-06-17T13:00:00-04:00", stage:"Group K" },
+    { teams:"England vs Croatia", iso:"2026-06-17T16:00:00-04:00", stage:"Group L" },
+    { teams:"Ghana vs Panama", iso:"2026-06-17T19:00:00-04:00", stage:"Group L" },
+    { teams:"Uzbekistan vs Colombia", iso:"2026-06-17T22:00:00-04:00", stage:"Group K" },
+    { teams:"UEFA D vs South Africa", iso:"2026-06-18T12:00:00-04:00", stage:"Group A" },
+    { teams:"Switzerland vs UEFA A", iso:"2026-06-18T15:00:00-04:00", stage:"Group B" },
+    { teams:"Canada vs Qatar", iso:"2026-06-18T18:00:00-04:00", stage:"Group B" },
+    { teams:"Mexico vs South Korea", iso:"2026-06-18T21:00:00-04:00", stage:"Group A" },
+    { teams:"United States vs Australia", iso:"2026-06-19T15:00:00-04:00", stage:"Group D" },
+    { teams:"Scotland vs Morocco", iso:"2026-06-19T18:00:00-04:00", stage:"Group C" },
+    { teams:"Brazil vs Haiti", iso:"2026-06-19T21:00:00-04:00", stage:"Group C" },
+    { teams:"UEFA C vs Paraguay", iso:"2026-06-19T23:59:00-04:00", stage:"Group D" },
+    { teams:"Netherlands vs UEFA B", iso:"2026-06-20T13:00:00-04:00", stage:"Group F" },
+    { teams:"Germany vs Ivory Coast", iso:"2026-06-20T16:00:00-04:00", stage:"Group E" },
+    { teams:"Ecuador vs Curacao", iso:"2026-06-20T20:00:00-04:00", stage:"Group E" },
+    { teams:"Tunisia vs Japan", iso:"2026-06-20T23:59:00-04:00", stage:"Group F" },
+    { teams:"Spain vs Saudi Arabia", iso:"2026-06-21T12:00:00-04:00", stage:"Group H" },
+    { teams:"Belgium vs Iran", iso:"2026-06-21T15:00:00-04:00", stage:"Group G" },
+    { teams:"Uruguay vs Cape Verde", iso:"2026-06-21T18:00:00-04:00", stage:"Group H" },
+    { teams:"New Zealand vs Egypt", iso:"2026-06-21T21:00:00-04:00", stage:"Group G" },
+    { teams:"Argentina vs Austria", iso:"2026-06-22T13:00:00-04:00", stage:"Group J" },
+    { teams:"France vs FIFA 2", iso:"2026-06-22T17:00:00-04:00", stage:"Group I" },
+    { teams:"Norway vs Senegal", iso:"2026-06-22T20:00:00-04:00", stage:"Group I" },
+    { teams:"Jordan vs Algeria", iso:"2026-06-22T23:00:00-04:00", stage:"Group J" },
+    { teams:"Portugal vs Uzbekistan", iso:"2026-06-23T13:00:00-04:00", stage:"Group K" },
+    { teams:"England vs Ghana", iso:"2026-06-23T16:00:00-04:00", stage:"Group L" },
+    { teams:"Panama vs Croatia", iso:"2026-06-23T19:00:00-04:00", stage:"Group L" },
+    { teams:"Colombia vs FIFA 1", iso:"2026-06-23T22:00:00-04:00", stage:"Group K" },
+    { teams:"Switzerland vs Canada", iso:"2026-06-24T15:00:00-04:00", stage:"Group B" },
+    { teams:"UEFA A vs Qatar", iso:"2026-06-24T15:00:00-04:00", stage:"Group B" },
+    { teams:"Scotland vs Brazil", iso:"2026-06-24T18:00:00-04:00", stage:"Group C" },
+    { teams:"Morocco vs Haiti", iso:"2026-06-24T18:00:00-04:00", stage:"Group C" },
+    { teams:"UEFA D vs Mexico", iso:"2026-06-24T21:00:00-04:00", stage:"Group A" },
+    { teams:"South Africa vs South Korea", iso:"2026-06-24T21:00:00-04:00", stage:"Group A" },
+    { teams:"Curacao vs Ivory Coast", iso:"2026-06-25T16:00:00-04:00", stage:"Group E" },
+    { teams:"Ecuador vs Germany", iso:"2026-06-25T16:00:00-04:00", stage:"Group E" },
+    { teams:"Japan vs UEFA B", iso:"2026-06-25T19:00:00-04:00", stage:"Group F" },
+    { teams:"Tunisia vs Netherlands", iso:"2026-06-25T19:00:00-04:00", stage:"Group F" },
+    { teams:"UEFA C vs United States", iso:"2026-06-25T22:00:00-04:00", stage:"Group D" },
+    { teams:"Paraguay vs Australia", iso:"2026-06-25T22:00:00-04:00", stage:"Group D" },
+    { teams:"Norway vs France", iso:"2026-06-26T15:00:00-04:00", stage:"Group I" },
+    { teams:"Senegal vs FIFA 2", iso:"2026-06-26T15:00:00-04:00", stage:"Group I" },
+    { teams:"Cape Verde vs Saudi Arabia", iso:"2026-06-26T20:00:00-04:00", stage:"Group H" },
+    { teams:"Uruguay vs Spain", iso:"2026-06-26T20:00:00-04:00", stage:"Group H" },
+    { teams:"Egypt vs Iran", iso:"2026-06-26T23:00:00-04:00", stage:"Group G" },
+    { teams:"New Zealand vs Belgium", iso:"2026-06-26T23:00:00-04:00", stage:"Group G" },
+    { teams:"Panama vs England", iso:"2026-06-27T17:00:00-04:00", stage:"Group L" },
+    { teams:"Croatia vs Ghana", iso:"2026-06-27T17:00:00-04:00", stage:"Group L" },
+    { teams:"Colombia vs Portugal", iso:"2026-06-27T19:30:00-04:00", stage:"Group K" },
+    { teams:"FIFA 1 vs Uzbekistan", iso:"2026-06-27T19:30:00-04:00", stage:"Group K" },
+    { teams:"Algeria vs Austria", iso:"2026-06-27T22:00:00-04:00", stage:"Group J" },
+    { teams:"Jordan vs Argentina", iso:"2026-06-27T22:00:00-04:00", stage:"Group J" },
+    { teams:"2A vs 2B", iso:"2026-06-28T15:00:00-04:00", stage:"Round of 32" },
+    { teams:"1C vs 2F", iso:"2026-06-29T13:00:00-04:00", stage:"Round of 32" },
+    { teams:"1E vs 3ABCDF", iso:"2026-06-29T16:30:00-04:00", stage:"Round of 32" },
+    { teams:"1F vs 2C", iso:"2026-06-29T21:00:00-04:00", stage:"Round of 32" },
+    { teams:"2E vs 2I", iso:"2026-06-30T14:00:00-04:00", stage:"Round of 32" },
+    { teams:"1I vs 3CDFGH", iso:"2026-06-30T17:00:00-04:00", stage:"Round of 32" },
+    { teams:"1A vs 3CEFHI", iso:"2026-06-30T21:00:00-04:00", stage:"Round of 32" },
+    { teams:"1L vs 3EHIJK", iso:"2026-07-01T12:00:00-04:00", stage:"Round of 32" },
+    { teams:"1G vs 3AEHIJ", iso:"2026-07-01T16:00:00-04:00", stage:"Round of 32" },
+    { teams:"1D vs 3BEFIJ", iso:"2026-07-01T20:00:00-04:00", stage:"Round of 32" },
+    { teams:"1H vs 2J", iso:"2026-07-02T15:00:00-04:00", stage:"Round of 32" },
+    { teams:"2K vs 2L", iso:"2026-07-02T19:00:00-04:00", stage:"Round of 32" },
+    { teams:"2B vs 3EFGIJ", iso:"2026-07-02T23:00:00-04:00", stage:"Round of 32" },
+    { teams:"2D vs 2G", iso:"2026-07-03T14:00:00-04:00", stage:"Round of 32" },
+    { teams:"1J vs 2H", iso:"2026-07-03T18:00:00-04:00", stage:"Round of 32" },
+    { teams:"1K vs 3DEIJL", iso:"2026-07-03T21:30:00-04:00", stage:"Round of 32" },
+    { teams:"W73 vs W75", iso:"2026-07-04T13:00:00-04:00", stage:"Round of 16" },
+    { teams:"W74 vs W77", iso:"2026-07-04T17:00:00-04:00", stage:"Round of 16" },
+    { teams:"W76 vs W78", iso:"2026-07-05T16:00:00-04:00", stage:"Round of 16" },
+    { teams:"W79 vs W80", iso:"2026-07-05T20:00:00-04:00", stage:"Round of 16" },
+    { teams:"W83 vs W84", iso:"2026-07-06T15:00:00-04:00", stage:"Round of 16" },
+    { teams:"W81 vs W82", iso:"2026-07-06T20:00:00-04:00", stage:"Round of 16" },
+    { teams:"W86 vs W88", iso:"2026-07-07T12:00:00-04:00", stage:"Round of 16" },
+    { teams:"W85 vs W87", iso:"2026-07-07T16:00:00-04:00", stage:"Round of 16" },
+    { teams:"W89 vs W90", iso:"2026-07-09T16:00:00-04:00", stage:"Quarterfinals" },
+    { teams:"W93 vs W94", iso:"2026-07-10T15:00:00-04:00", stage:"Quarterfinals" },
+    { teams:"W91 vs W92", iso:"2026-07-11T17:00:00-04:00", stage:"Quarterfinals" },
+    { teams:"W95 vs W96", iso:"2026-07-11T21:00:00-04:00", stage:"Quarterfinals" },
+    { teams:"W97 vs W98", iso:"2026-07-14T15:00:00-04:00", stage:"Semifinals" },
+    { teams:"W99 vs W100", iso:"2026-07-15T15:00:00-04:00", stage:"Semifinals" },
+    { teams:"L101 vs L102", iso:"2026-07-18T17:00:00-04:00", stage:"Third Place" },
+    { teams:"W191 vs W102", iso:"2026-07-19T15:00:00-04:00", stage:"Final" }
+  ];
+
+  var DEAL        = "🍺 $25 Dollar Pitchers all game long";
+  var LIVE_MS     = 2.5 * 60 * 60 * 1000;
+  var UPCOMING_N  = 4;
+  var TZ          = "America/New_York";
+
+  var fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: TZ, weekday:"short", month:"short", day:"numeric",
+    hour:"numeric", minute:"2-digit"
+  });
+
+  function label(iso){
+    var parts = {};
+    fmt.formatToParts(new Date(iso)).forEach(function(p){ parts[p.type]=p.value; });
+    return parts.weekday+" "+parts.month+" "+parts.day+" · "+
+           parts.hour+":"+parts.minute+" "+parts.dayPeriod;
+  }
+
+  function esc(s){ return String(s).replace(/[&<>]/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c]; }); }
+
+  function render(){
+    var now = Date.now();
+    var live = MATCHES.filter(function(m){ return new Date(m.iso).getTime() <= now &&
+                                                  new Date(m.iso).getTime()+LIVE_MS > now; })
+                      .sort(function(a,b){ return new Date(a.iso)-new Date(b.iso); });
+    var future = MATCHES.filter(function(m){ return new Date(m.iso).getTime() > now; })
+                        .sort(function(a,b){ return new Date(a.iso)-new Date(b.iso); });
+
+    var hero = live[0] || future[0];
+    var rest = (live[0] ? future : future.slice(1)).slice(0, UPCOMING_N);
+
+    var html = "";
+    if (hero){
+      var isLive = !!live[0];
+      html += '<div class="cs-next">'
+            +   '<div class="cs-tag">'+(isLive?"LIVE NOW":"NEXT MATCH")+(hero.stage?' · '+esc(hero.stage):'')+'</div>'
+            +   '<div class="cs-teams">'+esc(hero.teams)+(isLive?' <span class="cs-live">● LIVE</span>':'')+'</div>'
+            +   '<div class="cs-when">'+label(hero.iso)+'</div>'
+            +   '<div class="cs-deal">'+esc(DEAL)+'</div>'
+            + '</div>';
+    } else {
+      html += '<div class="cs-next"><div class="cs-tag">SCHEDULE</div>'
+            + '<div class="cs-teams">Season Complete</div>'
+            + '<div class="cs-deal">'+esc(DEAL)+'</div></div>';
+    }
+
+    html += '<div class="cs-up"><h3>UPCOMING</h3>';
+    if (rest.length){
+      rest.forEach(function(m){
+        html += '<div class="cs-row"><span class="cs-t">'+esc(m.teams)+'</span>'
+              + '<span class="cs-d">'+label(m.iso)+'</span></div>';
+      });
+    } else {
+      html += '<div class="cs-empty">No more upcoming matches.</div>';
+    }
+    html += '</div>';
+
+    document.getElementById("cs-app").innerHTML = html;
+  }
+
+  function safeRender(){
+    try { render(); }
+    catch(e){ document.getElementById("cs-app").innerHTML =
+      '<div style="padding:16px;color:#900;font:14px sans-serif">JS error: '+esc(e.message)+'</div>'; }
+  }
+  safeRender();
+  setInterval(safeRender, 30000);
+})();
+</script>
+</body>
+</html>
